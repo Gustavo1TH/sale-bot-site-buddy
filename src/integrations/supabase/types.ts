@@ -21,6 +21,7 @@ export type Database = {
           discord_token: string | null
           guild_id: string | null
           id: string
+          mercado_pago_access_token: string | null
           payment_pending_message: string | null
           purchase_message: string | null
           updated_at: string
@@ -32,6 +33,7 @@ export type Database = {
           discord_token?: string | null
           guild_id?: string | null
           id?: string
+          mercado_pago_access_token?: string | null
           payment_pending_message?: string | null
           purchase_message?: string | null
           updated_at?: string
@@ -43,6 +45,7 @@ export type Database = {
           discord_token?: string | null
           guild_id?: string | null
           id?: string
+          mercado_pago_access_token?: string | null
           payment_pending_message?: string | null
           purchase_message?: string | null
           updated_at?: string

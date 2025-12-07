@@ -1,14 +1,12 @@
-import { Bot, Package, MessageSquare, Settings, LayoutDashboard, CreditCard, Users, Bell } from "lucide-react";
+import { Bot, Package, MessageSquare, Settings, LayoutDashboard, CreditCard } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
   { icon: Package, label: "Produtos", path: "/products" },
-  { icon: MessageSquare, label: "Mensagens", path: "/messages" },
-  { icon: Users, label: "Clientes", path: "/customers" },
   { icon: CreditCard, label: "Pagamentos", path: "/payments" },
-  { icon: Bell, label: "Notificações", path: "/notifications" },
+  { icon: MessageSquare, label: "Mensagens", path: "/messages" },
   { icon: Settings, label: "Configurações", path: "/settings" },
 ];
 

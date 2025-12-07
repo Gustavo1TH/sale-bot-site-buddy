@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Plus, Search, Edit, Trash2, MoreVertical, Package, Loader2 } from "lucide-react";
+import { Plus, Search, Edit, Trash2, MoreVertical, Package, Loader2, Hash } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct, Product, CreateProductData } from "@/hooks/useProducts";
+import { useDiscordChannels } from "@/hooks/useDiscordChannels";
 import { useState } from "react";
 import {
   Dialog,
@@ -14,6 +15,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const ProductForm = ({ 
   product, 
@@ -26,6 +34,8 @@ const ProductForm = ({
   onClose: () => void;
   isLoading: boolean;
 }) => {
+  const { data: channels, isLoading: channelsLoading } = useDiscordChannels();
+  
   const [formData, setFormData] = useState<CreateProductData>({
     name: product?.name || "",
     description: product?.description || "",
@@ -91,13 +101,45 @@ const ProductForm = ({
       </div>
 
       <div>
-        <Label>ID do Canal Discord</Label>
-        <Input
-          value={formData.discord_channel_id || ""}
-          onChange={(e) => setFormData({ ...formData, discord_channel_id: e.target.value })}
-          placeholder="Ex: 123456789012345678"
-          className="mt-1.5 bg-secondary/50"
-        />
+        <Label className="flex items-center gap-2">
+          <Hash className="h-4 w-4" />
+          Canal do Discord
+        </Label>
+        {channelsLoading ? (
+          <div className="mt-1.5 flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Carregando canais...
+          </div>
+        ) : channels && channels.length > 0 ? (
+          <Select
+            value={formData.discord_channel_id || "none"}
+            onValueChange={(value) => setFormData({ ...formData, discord_channel_id: value === "none" ? "" : value })}
+          >
+            <SelectTrigger className="mt-1.5 bg-secondary/50">
+              <SelectValue placeholder="Selecione um canal" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Nenhum canal selecionado</SelectItem>
+              {channels.map((channel) => (
+                <SelectItem key={channel.id} value={channel.id}>
+                  #{channel.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <div className="mt-1.5">
+            <Input
+              value={formData.discord_channel_id || ""}
+              onChange={(e) => setFormData({ ...formData, discord_channel_id: e.target.value })}
+              placeholder="Ex: 123456789012345678"
+              className="bg-secondary/50"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Configure o token e servidor em Configurações para ver os canais
+            </p>
+          </div>
+        )}
         <p className="text-xs text-muted-foreground mt-1">
           Canal onde o produto será anunciado
         </p>
@@ -132,6 +174,7 @@ const ProductForm = ({
 
 const Products = () => {
   const { data: products, isLoading } = useProducts();
+  const { data: channels } = useDiscordChannels();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -142,6 +185,12 @@ const Products = () => {
   const filteredProducts = products?.filter((product) =>
     product.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const getChannelName = (channelId: string | null) => {
+    if (!channelId || !channels) return null;
+    const channel = channels.find((c) => c.id === channelId);
+    return channel ? `#${channel.name}` : channelId;
+  };
 
   const handleCreateProduct = async (data: CreateProductData) => {
     await createProduct.mutateAsync(data);
@@ -275,7 +324,9 @@ const Products = () => {
                 <div className="mt-4 flex items-center justify-between border-t border-border pt-4 text-sm text-muted-foreground">
                   <span>Estoque: {product.stock}</span>
                   {product.discord_channel_id && (
-                    <span className="text-xs">Canal configurado</span>
+                    <span className="text-xs text-primary">
+                      {getChannelName(product.discord_channel_id)}
+                    </span>
                   )}
                 </div>
 

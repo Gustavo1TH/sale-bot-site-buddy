@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.discord-bot-api]
 verify_jwt = false
+
+[functions.discord-channels]
+verify_jwt = false
