@@ -19,15 +19,24 @@ serve(async (req) => {
   }
 
   try {
-    const MERCADO_PAGO_ACCESS_TOKEN = Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
+    // Buscar token do Mercado Pago das configurações
+    const { data: settings } = await supabase
+      .from('bot_settings')
+      .select('mercado_pago_access_token')
+      .limit(1)
+      .single();
+
+    const MERCADO_PAGO_ACCESS_TOKEN = settings?.mercado_pago_access_token || Deno.env.get('MERCADO_PAGO_ACCESS_TOKEN');
+
     if (!MERCADO_PAGO_ACCESS_TOKEN) {
-      throw new Error('MERCADO_PAGO_ACCESS_TOKEN não configurado');
+      throw new Error('Token do Mercado Pago não configurado');
     }
 
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
     const { orderId, amount, description, payerEmail } = await req.json() as PixRequest;
 
     console.log('Gerando PIX para pedido:', orderId, 'Valor:', amount);

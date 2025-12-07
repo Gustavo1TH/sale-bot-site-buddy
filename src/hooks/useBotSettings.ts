@@ -6,6 +6,7 @@ export interface BotSettings {
   id: string;
   discord_token: string | null;
   guild_id: string | null;
+  mercado_pago_access_token: string | null;
   welcome_message: string | null;
   purchase_message: string | null;
   payment_pending_message: string | null;
@@ -22,9 +23,9 @@ export const useBotSettings = () => {
         .from("bot_settings")
         .select("*")
         .limit(1)
-        .single();
+        .maybeSingle();
       
-      if (error && error.code !== "PGRST116") throw error;
+      if (error) throw error;
       return data as BotSettings | null;
     },
   });
@@ -39,7 +40,7 @@ export const useUpdateBotSettings = () => {
         .from("bot_settings")
         .select("id")
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (existing) {
         const { data: settings, error } = await supabase
@@ -64,6 +65,7 @@ export const useUpdateBotSettings = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["bot-settings"] });
+      queryClient.invalidateQueries({ queryKey: ["discord-channels"] });
       toast.success("Configurações salvas!");
     },
     onError: (error) => {
