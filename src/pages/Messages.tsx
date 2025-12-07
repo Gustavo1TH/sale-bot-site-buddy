@@ -1,50 +1,85 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Plus, Save, MessageSquare, Zap, ShoppingCart, HelpCircle } from "lucide-react";
-import { useState } from "react";
+import { Save, MessageSquare, ShoppingCart, CreditCard, Gift, Loader2 } from "lucide-react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { useBotSettings, useUpdateBotSettings } from "@/hooks/useBotSettings";
 
 const messageTemplates = [
   {
-    id: "welcome",
+    id: "welcome_message",
     name: "Mensagem de Boas-vindas",
     icon: MessageSquare,
     description: "Enviada quando um novo usuário entra no servidor",
-    content: "👋 Olá {user}! Bem-vindo à nossa loja!\n\nDigite !menu para ver nossos produtos disponíveis.",
+    variables: ["{user}"],
   },
   {
-    id: "purchase",
+    id: "purchase_message",
     name: "Confirmação de Compra",
     icon: ShoppingCart,
-    description: "Enviada após uma compra bem-sucedida",
-    content: "✅ Compra realizada com sucesso!\n\n📦 Produto: {product}\n💰 Valor: {price}\n🔑 Seu código: {code}\n\nObrigado pela compra!",
+    description: "Enviada após o pagamento ser confirmado",
+    variables: ["{user}", "{product}", "{price}"],
   },
   {
-    id: "command",
-    name: "Resposta a Comandos",
-    icon: Zap,
-    description: "Resposta padrão para comandos do bot",
-    content: "📋 **Menu de Comandos**\n\n!produtos - Ver produtos disponíveis\n!comprar [id] - Comprar um produto\n!saldo - Ver seu saldo\n!ajuda - Obter ajuda",
+    id: "payment_pending_message",
+    name: "Pagamento Pendente",
+    icon: CreditCard,
+    description: "Enviada quando o PIX é gerado",
+    variables: ["{product}", "{price}"],
   },
   {
-    id: "support",
-    name: "Mensagem de Suporte",
-    icon: HelpCircle,
-    description: "Enviada quando um usuário pede ajuda",
-    content: "🆘 Precisa de ajuda?\n\nEntre em contato com nosso suporte:\n📧 Email: suporte@exemplo.com\n💬 Discord: Admin#0001\n\nHorário: 9h às 18h",
+    id: "delivery_message",
+    name: "Entrega do Produto",
+    icon: Gift,
+    description: "Enviada na DM com o conteúdo do produto",
+    variables: ["{code}"],
   },
 ];
 
 const Messages = () => {
-  const [selectedTemplate, setSelectedTemplate] = useState(messageTemplates[0]);
-  const [editedContent, setEditedContent] = useState(messageTemplates[0].content);
+  const { data: settings, isLoading } = useBotSettings();
+  const updateSettings = useUpdateBotSettings();
+  
+  const [selectedTemplateId, setSelectedTemplateId] = useState("welcome_message");
+  const [messages, setMessages] = useState<Record<string, string>>({});
 
-  const handleSelectTemplate = (template: typeof messageTemplates[0]) => {
-    setSelectedTemplate(template);
-    setEditedContent(template.content);
+  useEffect(() => {
+    if (settings) {
+      setMessages({
+        welcome_message: settings.welcome_message || "",
+        purchase_message: settings.purchase_message || "",
+        payment_pending_message: settings.payment_pending_message || "",
+        delivery_message: settings.delivery_message || "",
+      });
+    }
+  }, [settings]);
+
+  const selectedTemplate = messageTemplates.find((t) => t.id === selectedTemplateId)!;
+  const currentContent = messages[selectedTemplateId] || "";
+
+  const handleContentChange = (content: string) => {
+    setMessages((prev) => ({ ...prev, [selectedTemplateId]: content }));
   };
+
+  const handleSave = async () => {
+    await updateSettings.mutateAsync({
+      welcome_message: messages.welcome_message,
+      purchase_message: messages.purchase_message,
+      payment_pending_message: messages.payment_pending_message,
+      delivery_message: messages.delivery_message,
+    });
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -57,9 +92,17 @@ const Messages = () => {
               Configure os templates de mensagens do bot
             </p>
           </div>
-          <Button variant="glow">
-            <Plus className="h-4 w-4" />
-            Novo Template
+          <Button 
+            variant="glow" 
+            onClick={handleSave}
+            disabled={updateSettings.isPending}
+          >
+            {updateSettings.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
+            Salvar Alterações
           </Button>
         </div>
 
@@ -74,10 +117,10 @@ const Messages = () => {
               return (
                 <button
                   key={template.id}
-                  onClick={() => handleSelectTemplate(template)}
+                  onClick={() => setSelectedTemplateId(template.id)}
                   className={cn(
                     "w-full glass-card rounded-xl p-4 text-left transition-all duration-200",
-                    selectedTemplate.id === template.id
+                    selectedTemplateId === template.id
                       ? "border-primary/50 bg-primary/5"
                       : "hover:border-border/80"
                   )}
@@ -86,7 +129,7 @@ const Messages = () => {
                     <div
                       className={cn(
                         "rounded-lg p-2",
-                        selectedTemplate.id === template.id
+                        selectedTemplateId === template.id
                           ? "bg-primary/20"
                           : "bg-secondary"
                       )}
@@ -94,7 +137,7 @@ const Messages = () => {
                       <Icon
                         className={cn(
                           "h-4 w-4",
-                          selectedTemplate.id === template.id
+                          selectedTemplateId === template.id
                             ? "text-primary"
                             : "text-muted-foreground"
                         )}
@@ -120,36 +163,26 @@ const Messages = () => {
               <div className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-foreground">
-                    Nome do Template
-                  </label>
-                  <Input
-                    value={selectedTemplate.name}
-                    className="mt-1.5 bg-secondary/50"
-                    readOnly
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium text-foreground">
                     Conteúdo da Mensagem
                   </label>
                   <Textarea
-                    value={editedContent}
-                    onChange={(e) => setEditedContent(e.target.value)}
+                    value={currentContent}
+                    onChange={(e) => handleContentChange(e.target.value)}
                     className="mt-1.5 min-h-[200px] bg-secondary/50 font-mono text-sm"
+                    placeholder="Digite o conteúdo da mensagem..."
                   />
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    Use variáveis: {"{user}"}, {"{product}"}, {"{price}"},{" "}
-                    {"{code}"}
-                  </p>
-                </div>
-
-                <div className="flex justify-end gap-3">
-                  <Button variant="outline">Cancelar</Button>
-                  <Button variant="glow">
-                    <Save className="h-4 w-4" />
-                    Salvar Alterações
-                  </Button>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <span className="text-xs text-muted-foreground">Variáveis:</span>
+                    {selectedTemplate.variables.map((v) => (
+                      <code
+                        key={v}
+                        className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary cursor-pointer hover:bg-primary/20"
+                        onClick={() => handleContentChange(currentContent + v)}
+                      >
+                        {v}
+                      </code>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -177,11 +210,11 @@ const Messages = () => {
                       </span>
                     </div>
                     <div className="mt-1 whitespace-pre-wrap text-sm text-foreground/90">
-                      {editedContent
+                      {currentContent
                         .replace("{user}", "@João")
                         .replace("{product}", "Plano Premium")
-                        .replace("{price}", "R$ 199,90")
-                        .replace("{code}", "XXXX-XXXX-XXXX")}
+                        .replace("{price}", "199,90")
+                        .replace("{code}", "XXXX-XXXX-XXXX-XXXX")}
                     </div>
                   </div>
                 </div>

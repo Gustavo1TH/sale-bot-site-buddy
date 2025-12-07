@@ -1,27 +1,52 @@
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Save, Bot, Key, Webhook, Bell, Shield, Globe } from "lucide-react";
-import { useState } from "react";
+import { Save, Bot, Key, Globe, Loader2, Copy, Check } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useBotSettings, useUpdateBotSettings } from "@/hooks/useBotSettings";
+import { toast } from "sonner";
 
 const Settings = () => {
-  const [botToken, setBotToken] = useState("");
-  const [guildId, setGuildId] = useState("");
-  const [channelId, setChannelId] = useState("");
-  const [webhookUrl, setWebhookUrl] = useState("");
+  const { data: settings, isLoading } = useBotSettings();
+  const updateSettings = useUpdateBotSettings();
   
-  const [settings, setSettings] = useState({
-    autoReply: true,
-    welcomeMessage: true,
-    logTransactions: true,
-    dmNotifications: false,
-    maintenanceMode: false,
+  const [formData, setFormData] = useState({
+    discord_token: "",
+    guild_id: "",
   });
+  const [copied, setCopied] = useState(false);
 
-  const toggleSetting = (key: keyof typeof settings) => {
-    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  useEffect(() => {
+    if (settings) {
+      setFormData({
+        discord_token: settings.discord_token || "",
+        guild_id: settings.guild_id || "",
+      });
+    }
+  }, [settings]);
+
+  const handleSave = async () => {
+    await updateSettings.mutateAsync(formData);
   };
+
+  const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/webhook-mercadopago`;
+
+  const copyWebhookUrl = () => {
+    navigator.clipboard.writeText(webhookUrl);
+    setCopied(true);
+    toast.success("URL copiada!");
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>
@@ -60,10 +85,13 @@ const Settings = () => {
                 <Input
                   type="password"
                   placeholder="Seu token do bot Discord"
-                  value={botToken}
-                  onChange={(e) => setBotToken(e.target.value)}
+                  value={formData.discord_token}
+                  onChange={(e) => setFormData({ ...formData, discord_token: e.target.value })}
                   className="mt-1.5 bg-secondary/50"
                 />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Obtenha em discord.com/developers/applications
+                </p>
               </div>
 
               <div>
@@ -73,39 +101,26 @@ const Settings = () => {
                 </label>
                 <Input
                   placeholder="Ex: 123456789012345678"
-                  value={guildId}
-                  onChange={(e) => setGuildId(e.target.value)}
-                  className="mt-1.5 bg-secondary/50"
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Shield className="h-4 w-4" />
-                  ID do Canal de Vendas
-                </label>
-                <Input
-                  placeholder="Ex: 123456789012345678"
-                  value={channelId}
-                  onChange={(e) => setChannelId(e.target.value)}
+                  value={formData.guild_id}
+                  onChange={(e) => setFormData({ ...formData, guild_id: e.target.value })}
                   className="mt-1.5 bg-secondary/50"
                 />
               </div>
             </div>
           </div>
 
-          {/* Webhooks */}
+          {/* Webhook Mercado Pago */}
           <div className="glass-card rounded-xl p-6">
             <div className="flex items-center gap-3 mb-6">
-              <div className="rounded-xl bg-primary/10 p-3">
-                <Webhook className="h-5 w-5 text-primary" />
+              <div className="rounded-xl bg-success/10 p-3">
+                <Globe className="h-5 w-5 text-success" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">
-                  Webhooks
+                  Webhook Mercado Pago
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Integrações externas
+                  Configure para receber notificações de pagamento
                 </p>
               </div>
             </div>
@@ -113,91 +128,53 @@ const Settings = () => {
             <div className="space-y-4">
               <div>
                 <label className="text-sm font-medium text-foreground">
-                  Webhook de Notificações
+                  URL do Webhook
                 </label>
-                <Input
-                  placeholder="https://discord.com/api/webhooks/..."
-                  value={webhookUrl}
-                  onChange={(e) => setWebhookUrl(e.target.value)}
-                  className="mt-1.5 bg-secondary/50"
-                />
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Usado para enviar logs de transações
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Bot Settings */}
-          <div className="glass-card rounded-xl p-6 lg:col-span-2">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="rounded-xl bg-primary/10 p-3">
-                <Bell className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-foreground">
-                  Opções do Bot
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                  Comportamento e funcionalidades
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
-              {[
-                {
-                  key: "autoReply",
-                  label: "Resposta Automática",
-                  description: "Responder automaticamente a comandos",
-                },
-                {
-                  key: "welcomeMessage",
-                  label: "Mensagem de Boas-vindas",
-                  description: "Enviar mensagem para novos membros",
-                },
-                {
-                  key: "logTransactions",
-                  label: "Log de Transações",
-                  description: "Registrar todas as vendas",
-                },
-                {
-                  key: "dmNotifications",
-                  label: "Notificações por DM",
-                  description: "Enviar comprovantes por mensagem privada",
-                },
-                {
-                  key: "maintenanceMode",
-                  label: "Modo Manutenção",
-                  description: "Desativar vendas temporariamente",
-                },
-              ].map((setting) => (
-                <div
-                  key={setting.key}
-                  className="flex items-center justify-between rounded-lg bg-secondary/30 p-4"
-                >
-                  <div>
-                    <p className="font-medium text-foreground">{setting.label}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {setting.description}
-                    </p>
-                  </div>
-                  <Switch
-                    checked={settings[setting.key as keyof typeof settings]}
-                    onCheckedChange={() =>
-                      toggleSetting(setting.key as keyof typeof settings)
-                    }
+                <div className="flex gap-2 mt-1.5">
+                  <Input
+                    value={webhookUrl}
+                    readOnly
+                    className="bg-secondary/50 font-mono text-xs"
                   />
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={copyWebhookUrl}
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
                 </div>
-              ))}
+                <p className="text-xs text-muted-foreground mt-2">
+                  Configure esta URL em: Mercado Pago → Suas integrações → Webhooks
+                </p>
+              </div>
+
+              <div className="rounded-lg bg-warning/10 border border-warning/20 p-4">
+                <h4 className="font-medium text-warning text-sm">Instruções</h4>
+                <ol className="text-xs text-muted-foreground mt-2 space-y-1 list-decimal list-inside">
+                  <li>Acesse o painel do Mercado Pago</li>
+                  <li>Vá em "Suas integrações" → "Webhooks"</li>
+                  <li>Cole a URL acima</li>
+                  <li>Selecione o evento "payment"</li>
+                </ol>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Save Button */}
         <div className="flex justify-end">
-          <Button variant="glow" size="lg">
-            <Save className="h-4 w-4" />
+          <Button 
+            variant="glow" 
+            size="lg" 
+            onClick={handleSave}
+            disabled={updateSettings.isPending}
+          >
+            {updateSettings.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4" />
+            )}
             Salvar Configurações
           </Button>
         </div>

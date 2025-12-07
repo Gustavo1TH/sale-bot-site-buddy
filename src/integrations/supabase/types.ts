@@ -14,7 +14,175 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bot_settings: {
+        Row: {
+          created_at: string
+          delivery_message: string | null
+          discord_token: string | null
+          guild_id: string | null
+          id: string
+          payment_pending_message: string | null
+          purchase_message: string | null
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          created_at?: string
+          delivery_message?: string | null
+          discord_token?: string | null
+          guild_id?: string | null
+          id?: string
+          payment_pending_message?: string | null
+          purchase_message?: string | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          created_at?: string
+          delivery_message?: string | null
+          discord_token?: string | null
+          guild_id?: string | null
+          id?: string
+          payment_pending_message?: string | null
+          purchase_message?: string | null
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: []
+      }
+      cart_items: {
+        Row: {
+          created_at: string
+          discord_user_id: string
+          id: string
+          product_id: string
+          quantity: number
+        }
+        Insert: {
+          created_at?: string
+          discord_user_id: string
+          id?: string
+          product_id: string
+          quantity?: number
+        }
+        Update: {
+          created_at?: string
+          discord_user_id?: string
+          id?: string
+          product_id?: string
+          quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cart_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          created_at: string
+          delivered_at: string | null
+          discord_user_id: string
+          discord_username: string
+          id: string
+          paid_at: string | null
+          pix_qr_code: string | null
+          pix_qr_code_base64: string | null
+          pix_transaction_id: string | null
+          product_id: string
+          quantity: number
+          status: string
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          delivered_at?: string | null
+          discord_user_id: string
+          discord_username: string
+          id?: string
+          paid_at?: string | null
+          pix_qr_code?: string | null
+          pix_qr_code_base64?: string | null
+          pix_transaction_id?: string | null
+          product_id: string
+          quantity?: number
+          status?: string
+          total_amount: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          delivered_at?: string | null
+          discord_user_id?: string
+          discord_username?: string
+          id?: string
+          paid_at?: string | null
+          pix_qr_code?: string | null
+          pix_qr_code_base64?: string | null
+          pix_transaction_id?: string | null
+          product_id?: string
+          quantity?: number
+          status?: string
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          active: boolean
+          created_at: string
+          delivery_content: string
+          description: string | null
+          discord_channel_id: string | null
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          stock: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          delivery_content: string
+          description?: string | null
+          discord_channel_id?: string | null
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+          stock?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          delivery_content?: string
+          description?: string | null
+          discord_channel_id?: string | null
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          stock?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
