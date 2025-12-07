@@ -1,1 +1,10 @@
 project_id = "ggzelxuawzpycqtbzocc"
+
+[functions.generate-pix]
+verify_jwt = false
+
+[functions.webhook-mercadopago]
+verify_jwt = false
+
+[functions.discord-bot-api]
+verify_jwt = false
